@@ -1,9 +1,8 @@
 {
-  "name": "superpowers-dev",
-  "description": "Development marketplace for Superpowers core skills library",
+  "name": "superpowers-light",
+  "description": "Customized fork of obra/superpowers (main mirrors upstream, improvements on dev)",
   "owner": {
-    "name": "Jesse Vincent",
-    "email": "jesse@fsck.com"
+    "name": "yu-dev-00"
   },
   "plugins": [
     {
