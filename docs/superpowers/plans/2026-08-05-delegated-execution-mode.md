@@ -16,8 +16,8 @@
 - 変更対象は `skills/subagent-driven-development/`(新規ファイル+SKILL.md 末尾追記)と `skills/writing-plans/SKILL.md`(Execution Handoff セクションのみ書き換え)。他は触らない
 - フォーク独自箇所のマーカーは「(superpowers-light addition)」
 - ステータス語彙は QUESTION / DONE / FAILED の 3 種のみ。迷ったら QUESTION
-- ワークツリー名の導出式: `sdd-` + 計画ファイル basename から拡張子を除いたもの(例: `2026-08-05-foo.md` → `sdd-2026-08-05-foo`)。配置はネイティブツール時 `<リポジトリルート>/.claude/worktrees/<名前>/`、フォールバック時 `<リポジトリルート>/.worktrees/<名前>/` の 2 候補に固定(親はこの 2 候補を順に確認すれば発見できる)
-- レポートパスの導出式: `<ワークツリー>/.superpowers/sdd/<計画 basename(拡張子なし)>/delegated-report.md`。コントローラは全ステータスメッセージに実際のワークツリー絶対パスを含め、親の事前計算とのずれを自己修正可能にする
+- ワークツリーは常に `git worktree add <リポジトリルート>/.worktrees/<決定的名>` で作成(ネイティブワークツリーツール・using-git-worktrees は使わない)。決定的名: `sdd-` + 計画ファイル basename から拡張子を除いたもの(例: `2026-08-05-foo.md` → `sdd-2026-08-05-foo`)。ブランチ名も同名
+- レポートパスの導出式: `<ワークツリー>/.superpowers/sdd/<計画 basename(拡張子なし)>/delegated-report.md`
 - 計画中のコミット例では trailer を省略しているが、実装時は必ず Global Constraints の trailer を付けること
 - コントローラは統合(finishing-a-development-branch、マージ、push)とワークスペース削除を行わない
 - 各コミットメッセージ末尾に trailer「Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>」を付ける
@@ -64,23 +64,20 @@ Subagent (general-purpose):
     **SDD skill directory:** [SDD_SKILL_DIR]
     **Report file:** [REPORT_FILE_PATH]
 
-    ## Workspace (overrides using-git-worktrees defaults)
+    ## Workspace
 
     All work happens in an isolated worktree of [REPO_ROOT] named
     deterministically after the plan: `sdd-` + the plan's basename without
-    its extension (plan `2026-08-05-foo.md` → worktree `sdd-2026-08-05-foo`).
+    its extension (plan `2026-08-05-foo.md` → worktree `sdd-2026-08-05-foo`),
+    located at `[REPO_ROOT]/.worktrees/<name>`.
 
-    1. Check whether that worktree already exists (`git worktree list`).
-    2. If it exists: enter it (native tool with its `path` argument), read
-       the SDD ledger inside, and resume from where it left off.
-    3. If not: create it with the native worktree tool using that exact
-       name (native tools place it under [REPO_ROOT]/.claude/worktrees/);
-       if no native tool accepts a name, fall back to
-       `git worktree add [REPO_ROOT]/.worktrees/<name>`.
+    Do NOT use native worktree tools or the using-git-worktrees skill —
+    delegated mode always uses plain git with this fixed path:
 
-    Include the actual absolute worktree path in EVERY status message you
-    send (QUESTION, DONE, and FAILED), so the parent never has to guess
-    which of the two locations was used.
+    1. If `[REPO_ROOT]/.worktrees/<name>` appears in `git worktree list`:
+       reuse it, read the SDD ledger inside, and resume from where it
+       left off.
+    2. Otherwise: `git worktree add [REPO_ROOT]/.worktrees/<name> -b <name>`.
 
     Every file edit and every git command MUST target this worktree. Never
     touch the parent repository checkout directly. Pass the worktree path
@@ -162,23 +159,19 @@ controller subagent that runs this entire skill in an isolated worktree.
 The parent's context stays clean — it only relays questions and receives
 the final report.
 
-In delegated mode, the workspace instructions in
-[delegated-controller-prompt.md](delegated-controller-prompt.md) override
-this skill's Setup section and using-git-worktrees defaults: deterministic
-naming wins, and an existing same-named worktree is resumed, never
-recreated.
+In delegated mode the controller does not use native worktree tools or
+using-git-worktrees: per
+[delegated-controller-prompt.md](delegated-controller-prompt.md) it always
+works in `git worktree add <repo root>/.worktrees/<deterministic name>`,
+and an existing same-named worktree is resumed, never recreated. This
+overrides this skill's Setup section for the controller.
 
 Parent-side procedure:
 
-1. Compute the deterministic names from the plan file: worktree name
-   `sdd-<plan basename without extension>` (located at
-   `<repo root>/.claude/worktrees/<name>/` when a native worktree tool is
-   used, or `<repo root>/.worktrees/<name>/` on the git fallback — check
-   both when discovering an existing one), report file
+1. Compute the deterministic paths from the plan file: worktree
+   `<repo root>/.worktrees/sdd-<plan basename without extension>/`, report
+   file
    `<worktree>/.superpowers/sdd/<plan basename without extension>/delegated-report.md`.
-   The controller echoes its actual worktree path in every status message,
-   so precomputation only needs to be right for the dispatch prompt, not
-   forever.
 2. Dispatch exactly ONE controller on the most capable available model
    using [delegated-controller-prompt.md](delegated-controller-prompt.md),
    filling [PLAN_FILE_PATH], [REPO_ROOT], [SDD_SKILL_DIR] (this skill's
@@ -379,7 +372,7 @@ Expected(すべて満たすこと):
 - (a) コントローラが孫エージェント(実装者)をディスパッチして hello.txt を作らせる(コントローラ自身が直接編集しない)
 - (b) 言語の曖昧点で QUESTION が返る → 「日本語で」と回答を返すと再開し、日本語の greeting で完了する
 - (c) DONE 報告にブランチ名・ワークツリーパス・コミット範囲が含まれ、使い捨てリポジトリのデフォルトブランチにはマージされていない
-- (d) 全ステータスメッセージに実ワークツリー絶対パスが含まれ、レポートファイルがその実パス配下の導出式の位置に存在する
+- (d) レポートファイルが導出式のパスに存在する
 
 QUESTION が一度も返らずに完了した場合、または他の期待が欠けた場合: テンプレート/セクションの該当記述を強化して修正・コミットし、Step 1 からやり直す(使い捨てリポジトリは作り直す)。
 
