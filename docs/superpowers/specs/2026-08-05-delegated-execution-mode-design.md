@@ -32,10 +32,18 @@ writing-plans の Execution Handoff は現在 2 択(Subagent-Driven / Inline)で
    をワークツリー内に固定する。テンプレートに作業ディレクトリ固定を明示的に
    指示する(親リポジトリの checkout を直接触ることの禁止を含む)。
    **ワークツリー名は計画ファイル名から決定的に導出する**(basename から拡張子を
-   除いたもの。例: 計画 `2026-08-05-foo.md` → ワークツリー名 `sdd-2026-08-05-foo`)。
+   除いたもの。例: 計画 `2026-08-05-foo.md` → ワークツリー名 `sdd-2026-08-05-foo`。
+   ブランチ名はハーネスの既定に従い、DONE 報告で実名を伝える)。
    これにより親は報告を待たずにワークツリーパスを計算できる。同名ワークツリーが
    既に存在する場合は新規作成せず再利用し、中のレジャーを確認して途中から再開する
    (これが障害回復の経路になる)。
+   **優先順位の明確化**: この決定的命名は、SDD/using-git-worktrees の「ネイティブ
+   ツール優先」原則より優先する。ネイティブのワークツリーツールが名前指定を
+   受け付ける場合(例: EnterWorktree の name パラメータ)はそれを決定的名で使い、
+   名前指定ができない場合のみ `git worktree add` フォールバックで決定的名を使う。
+   delegated-controller-prompt.md にこの指示を明記し、委任モードでは同テンプレートの
+   ワークツリー指示が using-git-worktrees の既定より優先されることを SKILL.md 追記
+   側にも記す。
 4. コントローラは subagent-driven-development の SKILL.md を読み、その手順
    (タスクごとの実装者ディスパッチ、二段レビュー、フィックスループ、レジャー、
    最終レビュー)に従って計画を実行する。**ただし統合(マージ/PR)は行わない**:
@@ -50,25 +58,32 @@ writing-plans の Execution Handoff は現在 2 択(Subagent-Driven / Inline)で
      ブランチは未統合のまま。コミット一覧、レビュー結果要約、保留(parked/deferred)
      事項、ブランチ名とワークツリーパスを報告する。
    - **FAILED** — 継続不能な失敗。レジャー上の到達位置と原因を報告する。
-6. 親セッションは QUESTION をそのままユーザーに取り次ぎ、ユーザーの回答を
+6. **レポートファイル契約**: パスは親が決めてディスパッチ時に渡す(SDD の
+   ワークスペース命名に倣い `<ワークスペース>/delegated-report.md` を既定とする)。
+   コントローラは DONE/FAILED 時に詳細(コミット一覧・各タスクのレビュー結果・
+   保留事項・QUESTION の往復記録)をこのファイルに書き、親へのステータス
+   メッセージは 15 行以内の要約に留める(SDD の実装者レポート契約と同型)。
+   QUESTION 時はファイル更新不要。コントローラは DONE 後もワークスペースと
+   レジャーを削除しない(統合完了後の掃除は親側の責務)。
+7. 親セッションは QUESTION をそのままユーザーに取り次ぎ、ユーザーの回答を
    SendMessage で同じコントローラに返す。コントローラは文脈を保ったまま再開する。
-7. 進捗の逐次報告は行わない(QUESTION と DONE/FAILED のみ)。
-8. 障害回復: コントローラの SDD レジャーは子ワークツリー内に残る。コントローラ
+8. 進捗の逐次報告は行わない(QUESTION と DONE/FAILED のみ)。
+9. 障害回復: コントローラの SDD レジャーは子ワークツリー内に残る。コントローラ
    喪失時は、新しいコントローラを同じ計画で再ディスパッチする。ワークツリー名は
    計画ファイル名から決定的に導出されるため(要件 3)、新コントローラは既存
    ワークツリーを発見・再利用し、レジャーから途中再開する。親はコントローラの
    agentId を控える(再開の第一手段は SendMessage、それが不能なら再ディスパッチ)。
-9. 編集は追記中心とし、フォーク独自箇所には「(superpowers-light addition)」
-   マーカーを付ける。Execution Handoff の 2 択提示文は 3 択への書き換えを許す
-   (このセクションのみ書き換え対象)。
+10. 編集は追記中心とし、フォーク独自箇所には「(superpowers-light addition)」
+    マーカーを付ける。Execution Handoff の 2 択提示文は 3 択への書き換えを許す
+    (このセクションのみ書き換え対象)。
 
 ## 変更対象ファイル
 
 | ファイル | 変更内容 |
 |---|---|
 | `skills/writing-plans/SKILL.md` | Execution Handoff セクションを 3 択に拡張。選択肢 3 の分岐先として superpowers:subagent-driven-development の Delegated Mode を指す |
-| `skills/subagent-driven-development/delegated-controller-prompt.md` | 新規。委任コントローラ用プロンプトテンプレート(要件 3〜5, 7 を本文に含む) |
-| `skills/subagent-driven-development/SKILL.md` | 「Delegated Mode (superpowers-light addition)」セクションを追記(親側手順: ディスパッチ、QUESTION 取り次ぎ、SendMessage 再開、agentId/ワークツリー記録、障害回復) |
+| `skills/subagent-driven-development/delegated-controller-prompt.md` | 新規。委任コントローラ用プロンプトテンプレート(要件 3〜6, 8 を本文に含む。ワークツリー指示は using-git-worktrees の既定より優先) |
+| `skills/subagent-driven-development/SKILL.md` | 「Delegated Mode (superpowers-light addition)」セクションを追記(親側手順: レポートファイルパスの決定とディスパッチ、QUESTION 取り次ぎ、SendMessage 再開、agentId 記録、障害回復、DONE 後の finishing-a-development-branch と掃除) |
 
 ## 検証方法
 
