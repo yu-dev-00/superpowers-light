@@ -4,10 +4,10 @@ Use this template when dispatching a plan document reviewer subagent.
 
 **Purpose:** Verify the plan is complete, matches the spec, and has proper task decomposition.
 
-**Dispatch after:** The complete plan is written.
+**Dispatch after:** The complete plan is written and the inline Self-Review fixes are done.
 
 ```
-Subagent (general-purpose):
+Task tool (general-purpose):
   description: "Review plan document"
   prompt: |
     You are a plan document reviewer. Verify this plan is complete and ready for implementation.
@@ -15,12 +15,17 @@ Subagent (general-purpose):
     **Plan to review:** [PLAN_FILE_PATH]
     **Spec for reference:** [SPEC_FILE_PATH]
 
+    This document already passed the author's inline self-review. Surface-level
+    problems (typos, placeholders) have likely been fixed. Focus on the problems
+    the author cannot see from inside their own context: misreadings of the spec,
+    internal contradictions, and unstated assumptions.
+
     ## What to Check
 
     | Category | What to Look For |
     |----------|------------------|
     | Completeness | TODOs, placeholders, incomplete tasks, missing steps |
-    | Spec Alignment | Plan covers spec requirements, no major scope creep |
+    | Spec Alignment | Plan covers spec requirements, no major scope creep, no spec misreadings |
     | Task Decomposition | Tasks have clear boundaries, steps are actionable |
     | Buildability | Could an engineer follow this plan without getting stuck? |
 
