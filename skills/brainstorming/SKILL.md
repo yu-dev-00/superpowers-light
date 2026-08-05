@@ -28,8 +28,9 @@ You MUST create a task for each of these items and complete them in order:
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
 6. **Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Transition to implementation** — invoke writing-plans skill to create implementation plan
+8. **Spec subagent review** — dispatch a spec-document-reviewer subagent, fix and re-dispatch until approved, max 3 rounds (see below)
+9. **User reviews written spec** — ask user to review the spec file before proceeding
+10. **Transition to implementation** — invoke writing-plans skill to create implementation plan
 
 ## Process Flow
 
@@ -42,6 +43,7 @@ digraph brainstorming {
     "User approves design?" [shape=diamond];
     "Write design doc" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
+    "Subagent spec review\n(max 3 rounds)" [shape=box];
     "User reviews spec?" [shape=diamond];
     "Invoke writing-plans skill" [shape=doublecircle];
 
@@ -52,7 +54,8 @@ digraph brainstorming {
     "User approves design?" -> "Present design sections" [label="no, revise"];
     "User approves design?" -> "Write design doc" [label="yes"];
     "Write design doc" -> "Spec self-review\n(fix inline)";
-    "Spec self-review\n(fix inline)" -> "User reviews spec?";
+    "Spec self-review\n(fix inline)" -> "Subagent spec review\n(max 3 rounds)";
+    "Subagent spec review\n(max 3 rounds)" -> "User reviews spec?";
     "User reviews spec?" -> "Write design doc" [label="changes requested"];
     "User reviews spec?" -> "Invoke writing-plans skill" [label="approved"];
 }
@@ -118,6 +121,20 @@ After writing the spec document, look at it with fresh eyes:
 4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
 
 Fix any issues inline. No need to re-review — just fix and move on.
+
+**Spec Subagent Review (superpowers-light addition):**
+After your self-review fixes are in, dispatch a spec-document-reviewer subagent
+using the template in `spec-document-reviewer-prompt.md`. Provide only the spec
+file path — NEVER your session history. The reviewer must read the document fresh.
+
+1. Dispatch one general-purpose subagent from the template, filling in [SPEC_FILE_PATH].
+2. If Issues Found: fix the issues yourself, then re-dispatch the reviewer for the whole spec.
+3. If Approved: summarize the reviewer's findings in chat, labeled as findings that
+   survived self-review, then proceed to the User Review Gate.
+
+Maximum 3 review rounds; if not converged, surface the remaining disagreements to
+your human partner. Reviewer feedback is advisory — if you believe a finding is
+wrong, say so and explain why instead of blindly complying.
 
 **User Review Gate:**
 After the spec review loop passes, ask the user to review the written spec before proceeding:
