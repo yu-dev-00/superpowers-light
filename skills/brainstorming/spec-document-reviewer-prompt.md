@@ -4,15 +4,20 @@ Use this template when dispatching a spec document reviewer subagent.
 
 **Purpose:** Verify the spec is complete, consistent, and ready for implementation planning.
 
-**Dispatch after:** Spec document is written to docs/superpowers/specs/
+**Dispatch after:** Spec document is written and the inline Spec Self-Review fixes are done.
 
 ```
-Subagent (general-purpose):
+Task tool (general-purpose):
   description: "Review spec document"
   prompt: |
     You are a spec document reviewer. Verify this spec is complete and ready for planning.
 
     **Spec to review:** [SPEC_FILE_PATH]
+
+    This document already passed the author's inline self-review. Surface-level
+    problems (typos, placeholders) have likely been fixed. Focus on the problems
+    the author cannot see from inside their own context: internal contradictions,
+    ambiguous requirements, and unstated assumptions.
 
     ## What to Check
 
