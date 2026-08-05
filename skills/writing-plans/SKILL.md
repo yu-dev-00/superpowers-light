@@ -137,7 +137,7 @@ Every step must contain the actual content an engineer needs. These are **plan f
 
 ## Self-Review
 
-After writing the complete plan, look at the spec with fresh eyes and check the plan against it. This is a checklist you run yourself — not a subagent dispatch.
+After writing the complete plan, look at the spec with fresh eyes and check the plan against it. Run this checklist yourself first — the subagent review loop comes after.
 
 **1. Spec coverage:** Skim each section/requirement in the spec. Can you point to a task that implements it? List any gaps.
 
@@ -146,6 +146,26 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
+
+## Plan Review Loop (superpowers-light addition)
+
+After your Self-Review fixes are in, dispatch a plan-document-reviewer subagent
+using the template in `plan-document-reviewer-prompt.md`. Provide only the plan
+file path and the spec file path — NEVER your session history. The reviewer must
+read the documents fresh.
+
+1. Dispatch one general-purpose subagent from the template, filling in
+   [PLAN_FILE_PATH] and [SPEC_FILE_PATH].
+2. If Issues Found: fix the issues yourself (you have the context), then
+   re-dispatch the reviewer for the whole plan.
+3. If Approved: summarize the reviewer's findings in chat, labeled as findings
+   that survived self-review, then proceed to Execution Handoff.
+
+**Loop guidance:**
+- Maximum 3 review rounds. If not converged, surface the remaining
+  disagreements to your human partner for a decision.
+- Reviewer feedback is advisory — if you believe a finding is wrong, say so
+  and explain why instead of blindly complying.
 
 ## Execution Handoff
 
