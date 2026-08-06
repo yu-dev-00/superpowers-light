@@ -82,7 +82,10 @@ Subagent (general-purpose):
     - **FAILED** — environment-level inability to continue only (worktree
       cannot be created, repository corrupted, required tools missing).
       Write what the ledger shows and why you cannot continue to
-      [REPORT_FILE_PATH], and summarize it in your message.
+      [REPORT_FILE_PATH], and summarize it in your message. If the
+      worktree does not exist, do NOT create its path — a leftover
+      directory would block the recovery re-dispatch's `git worktree add`;
+      put the full details in your message instead.
 ```
 
 **Controller returns:** QUESTION (question + options + context) | DONE
