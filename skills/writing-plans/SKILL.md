@@ -171,11 +171,13 @@ read the documents fresh.
 
 After saving the plan, offer execution choice:
 
-**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:**
+**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Three execution options:**
 
 **1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
 
 **2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
+
+**3. Delegated (superpowers-light addition)** - I hand the whole plan to one controller subagent that runs the subagent-driven loop in its own worktree; this session stays free and only relays its questions
 
 **Which approach?"**
 
@@ -186,3 +188,7 @@ After saving the plan, offer execution choice:
 **If Inline Execution chosen:**
 - **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
 - Batch execution with checkpoints for review
+
+**If Delegated chosen:**
+- **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development — follow its "Delegated Mode (superpowers-light addition)" section
+- One controller subagent runs the whole loop; the parent only relays QUESTION / receives DONE or FAILED
