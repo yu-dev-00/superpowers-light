@@ -501,3 +501,44 @@ Final reviewer: All requirements met. Deferred minors triaged: none block merge.
 
 Done! Using superpowers:finishing-a-development-branch.
 ```
+
+## Delegated Mode (superpowers-light addition)
+
+The third Execution Handoff option: the parent session dispatches ONE
+controller subagent that runs this entire skill in an isolated worktree.
+The parent's context stays clean — it only relays questions and receives
+the final report.
+
+In delegated mode the controller does not use native worktree tools or
+using-git-worktrees: per
+[delegated-controller-prompt.md](delegated-controller-prompt.md) it always
+works in `git worktree add <repo root>/.worktrees/<deterministic name>`,
+and an existing same-named worktree is resumed, never recreated. This
+overrides this skill's Setup section for the controller.
+
+Parent-side procedure:
+
+1. Compute the deterministic paths from the plan file: worktree
+   `<repo root>/.worktrees/sdd-<plan basename without extension>/`, report
+   file
+   `<worktree>/.superpowers/sdd/<plan basename without extension>/delegated-report.md`.
+2. Dispatch exactly ONE controller on the most capable available model
+   using [delegated-controller-prompt.md](delegated-controller-prompt.md),
+   filling [PLAN_FILE_PATH], [REPO_ROOT], [SDD_SKILL_DIR] (this skill's
+   own directory), and [REPORT_FILE_PATH]. Provide only those values —
+   NEVER your session history. Record the returned agent id.
+3. On **QUESTION**: relay the question to your human partner verbatim,
+   wait for their answer, and send it back to the same agent id. The
+   controller resumes with its context intact.
+4. On **DONE**: read the short summary (open the full report file only if
+   something needs checking), then use
+   superpowers:finishing-a-development-branch with your human partner for
+   the integration decision. Clean up the workspace and worktree only
+   after integration completes.
+5. On **FAILED**: read the report, fix the environment problem, then
+   re-dispatch (step 2). The new controller finds the existing worktree by
+   its deterministic name and resumes from the ledger inside.
+6. Controller loss — sending a message to the agent id errors out, or the
+   harness reports the agent dead — is handled exactly like FAILED:
+   re-dispatch and let the ledger drive resumption. There is no active
+   liveness monitoring.
